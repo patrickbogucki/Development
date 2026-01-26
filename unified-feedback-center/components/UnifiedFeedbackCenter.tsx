@@ -32,10 +32,23 @@ export function UnifiedFeedbackCenter() {
     const [isSuccess, setIsSuccess] = useState(false)
 
     // Form States
-    const [ideaForm, setIdeaForm] = useState({ title: "", description: "", category: "technology" })
+    const [ideaForm, setIdeaForm] = useState({ description: "", category: "" })
     const [feedbackForm, setFeedbackForm] = useState({ rating: 3, text: "" })
     const [brokenForm, setBrokenForm] = useState({ description: "", isUrgent: false })
     const [attachment, setAttachment] = useState<File | null>(null)
+
+    const isFormValid = () => {
+        if (mode === "idea") {
+            return ideaForm.category !== "" && ideaForm.description.trim().length > 0
+        }
+        if (mode === "feedback") {
+            return feedbackForm.text.trim().length > 0
+        }
+        if (mode === "broken") {
+            return brokenForm.description.trim().length > 0
+        }
+        return false
+    }
 
     const handleOpenChange = (newOpen: boolean) => {
         setOpen(newOpen)
@@ -45,7 +58,7 @@ export function UnifiedFeedbackCenter() {
                 setMode("select")
                 setIsSuccess(false) // Ensure success state is reset on dialog close
                 setAttachment(null)
-                setIdeaForm({ title: "", description: "", category: "technology" })
+                setIdeaForm({ description: "", category: "" })
                 setFeedbackForm({ rating: 3, text: "" })
                 setBrokenForm({ description: "", isUrgent: false })
             }, 300)
@@ -53,6 +66,8 @@ export function UnifiedFeedbackCenter() {
     }
 
     const handleSubmit = async () => {
+        if (!isFormValid()) return
+
         setIsSubmitting(true)
 
         // Simulate network delay
@@ -82,7 +97,7 @@ export function UnifiedFeedbackCenter() {
             setIsSuccess(false)
             setMode("select")
             setAttachment(null)
-            setIdeaForm({ title: "", description: "", category: "technology" })
+            setIdeaForm({ description: "", category: "" })
             setFeedbackForm({ rating: 3, text: "" })
             setBrokenForm({ description: "", isUrgent: false })
         }, 2000)
@@ -189,13 +204,21 @@ export function UnifiedFeedbackCenter() {
 
                     {/* Tabs Area */}
                     <Tabs defaultValue="submit" className="flex-1 flex flex-col w-full h-full overflow-hidden">
-                        <div className="px-6 border-b">
-                            <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="submit">Submit Feedback</TabsTrigger>
-                                <TabsTrigger value="history">My History</TabsTrigger>
-                                <TabsTrigger value="community">Community Ideas</TabsTrigger>
-                            </TabsList>
-                        </div>
+                        <AnimatePresence>
+                            {mode === "select" && (
+                                <motion.div
+                                    initial={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="px-6 border-b overflow-hidden"
+                                >
+                                    <TabsList className="grid w-full grid-cols-3 mb-4">
+                                        <TabsTrigger value="submit">Submit Feedback</TabsTrigger>
+                                        <TabsTrigger value="history">My History</TabsTrigger>
+                                        <TabsTrigger value="community">Community Ideas</TabsTrigger>
+                                    </TabsList>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         <div className="flex-1 overflow-y-auto p-6 bg-zinc-50 dark:bg-zinc-900/50">
                             <TabsContent value="submit" className="mt-0 h-full relative">
@@ -252,16 +275,7 @@ export function UnifiedFeedbackCenter() {
                                                     {mode === "idea" && (
                                                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                                                             <div className="space-y-2">
-                                                                <Label htmlFor="title">Title</Label>
-                                                                <Input
-                                                                    id="title"
-                                                                    placeholder="Enter a brief title"
-                                                                    value={ideaForm.title}
-                                                                    onChange={(e) => setIdeaForm({ ...ideaForm, title: e.target.value })}
-                                                                />
-                                                            </div>
-                                                            <div className="space-y-2">
-                                                                <Label htmlFor="category">Category</Label>
+                                                                <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
                                                                 <Select
                                                                     value={ideaForm.category}
                                                                     onValueChange={(val) => setIdeaForm({ ...ideaForm, category: val })}
@@ -277,7 +291,7 @@ export function UnifiedFeedbackCenter() {
                                                                 </Select>
                                                             </div>
                                                             <div className="space-y-2">
-                                                                <Label htmlFor="desc">Description</Label>
+                                                                <Label htmlFor="desc">Description <span className="text-red-500">*</span></Label>
                                                                 <Textarea
                                                                     id="desc"
                                                                     placeholder="Describe your idea in detail..."
@@ -308,7 +322,7 @@ export function UnifiedFeedbackCenter() {
                                                                 </div>
                                                             </div>
                                                             <div className="space-y-2">
-                                                                <Label htmlFor="feedback-text">What can we do better?</Label>
+                                                                <Label htmlFor="feedback-text">What can we do better? <span className="text-red-500">*</span></Label>
                                                                 <Textarea
                                                                     id="feedback-text"
                                                                     placeholder="We value your honest feedback..."
@@ -324,7 +338,7 @@ export function UnifiedFeedbackCenter() {
                                                     {mode === "broken" && (
                                                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                                                             <div className="space-y-2">
-                                                                <Label htmlFor="broken-desc">Short Description</Label>
+                                                                <Label htmlFor="broken-desc">Short Description <span className="text-red-500">*</span></Label>
                                                                 <Input
                                                                     id="broken-desc"
                                                                     placeholder="What isn't working?"
@@ -362,7 +376,7 @@ export function UnifiedFeedbackCenter() {
                                                     <Button
                                                         className="w-full h-11 text-base mt-2"
                                                         onClick={handleSubmit}
-                                                        disabled={isSubmitting}
+                                                        disabled={isSubmitting || !isFormValid()}
                                                     >
                                                         {isSubmitting ? (
                                                             <>
