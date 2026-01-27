@@ -66,4 +66,46 @@ export function voteSubmission(id: number, increment: number) {
     return db.prepare('SELECT * FROM submissions WHERE id = ?').get(id) as Submission;
 }
 
+// User Profile Table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_profile (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    name TEXT DEFAULT '',
+    email TEXT DEFAULT '',
+    title TEXT DEFAULT '',
+    store_number TEXT DEFAULT ''
+  )
+`);
+
+// Ensure default profile exists
+const profileCheck = db.prepare('SELECT count(*) as count FROM user_profile').get() as { count: number };
+if (profileCheck.count === 0) {
+    db.prepare(`
+    INSERT INTO user_profile (id, name, email, title, store_number)
+    VALUES (1, 'Guest User', 'guest@example.com', 'Associate', '001')
+  `).run();
+}
+
+export interface UserProfile {
+    id: number;
+    name: string;
+    email: string;
+    title: string;
+    store_number: string;
+}
+
+export function getProfile() {
+    return db.prepare('SELECT * FROM user_profile WHERE id = 1').get() as UserProfile;
+}
+
+export function updateProfile(data: Omit<UserProfile, 'id'>) {
+    const stmt = db.prepare(`
+    UPDATE user_profile
+    SET name = @name, email = @email, title = @title, store_number = @store_number
+    WHERE id = 1
+  `);
+    stmt.run(data);
+    return getProfile();
+}
+
 export default db;

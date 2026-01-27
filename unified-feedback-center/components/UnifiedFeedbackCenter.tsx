@@ -17,16 +17,35 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, Check, Loader2, ThumbsUp, ArrowUp, ArrowDown, Clock } from "lucide-react"
+import { Upload, Check, Loader2, ThumbsUp, ArrowUp, ArrowDown, Clock, User, Pencil, X, Save, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { motion, AnimatePresence } from "framer-motion"
 
 type FeedbackType = "select" | "idea" | "feedback" | "broken"
 
+interface UserProfile {
+    name: string
+    email: string
+    title: string
+    store_number: string
+}
+
 export function UnifiedFeedbackCenter() {
     const [open, setOpen] = useState(false)
     const [mode, setMode] = useState<FeedbackType>("select")
+
+    // Profile State
+    const [isProfileOpen, setIsProfileOpen] = useState(false)
+    const [isEditingProfile, setIsEditingProfile] = useState(false)
+    const [showProfileCancelConfirm, setShowProfileCancelConfirm] = useState(false)
+    const [userProfile, setUserProfile] = useState<UserProfile>({
+        name: "",
+        email: "",
+        title: "",
+        store_number: ""
+    })
+    const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null)
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
@@ -114,6 +133,13 @@ export function UnifiedFeedbackCenter() {
 
             setHistory(uiData.filter((i: any) => i.isMine))
             setCommunityIdeas(uiData.filter((i: any) => i.type === "Idea"))
+
+            // Fetch Profile
+            const profileRes = await fetch('/api/profile')
+            const profileData = await profileRes.json()
+            if (profileData && !profileData.error) {
+                setUserProfile(profileData)
+            }
 
         } catch (error) {
             console.error("Failed to fetch data", error)
@@ -282,6 +308,22 @@ export function UnifiedFeedbackCenter() {
                 >
                     <MessageSquarePlus className="h-5 w-5" />
                     <span className="text-lg font-medium">Feedback</span>
+                </Button>
+            </div>
+
+            {/* Profile Icon Header */}
+            <div className="fixed top-6 right-6 z-50">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-12 w-12 rounded-full overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-sm hover:shadow-md bg-white dark:bg-zinc-900"
+                    onClick={() => setIsProfileOpen(true)}
+                >
+                    <Avatar className="h-full w-full">
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                            {userProfile.name ? userProfile.name.substring(0, 2).toUpperCase() : "GU"}
+                        </AvatarFallback>
+                    </Avatar>
                 </Button>
             </div>
 
@@ -635,6 +677,161 @@ export function UnifiedFeedbackCenter() {
                             </TabsContent>
                         </div>
                     </Tabs>
+                </DialogContent>
+            </Dialog>
+
+            {/* Profile Dialog */}
+            <Dialog open={isProfileOpen} onOpenChange={(val) => {
+                if (!val && isEditingProfile) {
+                    // Try to close while editing
+                    if (JSON.stringify(userProfile) !== JSON.stringify(editedProfile)) {
+                        setShowProfileCancelConfirm(true)
+                        return
+                    }
+                }
+                setIsProfileOpen(val)
+                if (!val) {
+                    setIsEditingProfile(false)
+                    setShowProfileCancelConfirm(false)
+                    setEditedProfile(null)
+                }
+            }}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>User Profile</DialogTitle>
+                        <DialogDescription>Manage your personal information.</DialogDescription>
+                    </DialogHeader>
+
+                    {showProfileCancelConfirm ? (
+                        <div className="py-6 space-y-4 animate-in fade-in zoom-in duration-200">
+                            <div className="flex flex-col items-center justify-center text-center space-y-2">
+                                <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full text-red-600">
+                                    <AlertTriangle className="h-8 w-8" />
+                                </div>
+                                <h3 className="font-semibold text-lg">Discard Changes?</h3>
+                                <p className="text-muted-foreground">You have unsaved changes. Are you sure you want to discard them?</p>
+                            </div>
+                            <div className="flex gap-2 justify-center pt-2">
+                                <Button variant="outline" onClick={() => setShowProfileCancelConfirm(false)}>
+                                    Keep Editing
+                                </Button>
+                                <Button variant="destructive" onClick={() => {
+                                    setIsEditingProfile(false)
+                                    setShowProfileCancelConfirm(false)
+                                    setEditedProfile(null)
+                                }}>
+                                    Yes, Discard
+                                </Button>
+                            </div>
+                        </div>
+                    ) : isEditingProfile && editedProfile ? (
+                        <div className="space-y-4 py-2">
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="p-name">Full Name</Label>
+                                    <Input
+                                        id="p-name"
+                                        value={editedProfile.name}
+                                        onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
+                                        placeholder="John Doe"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="p-email">Email</Label>
+                                    <Input
+                                        id="p-email"
+                                        value={editedProfile.email}
+                                        onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
+                                        placeholder="john@example.com"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="p-title">Job Title</Label>
+                                        <Input
+                                            id="p-title"
+                                            value={editedProfile.title}
+                                            onChange={(e) => setEditedProfile({ ...editedProfile, title: e.target.value })}
+                                            placeholder="store_associate"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="p-store">Store #</Label>
+                                        <Input
+                                            id="p-store"
+                                            value={editedProfile.store_number}
+                                            onChange={(e) => setEditedProfile({ ...editedProfile, store_number: e.target.value })}
+                                            placeholder="001"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+                                <Button variant="ghost" onClick={() => {
+                                    if (JSON.stringify(userProfile) !== JSON.stringify(editedProfile)) {
+                                        setShowProfileCancelConfirm(true)
+                                    } else {
+                                        setIsEditingProfile(false)
+                                    }
+                                }}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={async () => {
+                                    try {
+                                        const res = await fetch('/api/profile', {
+                                            method: 'PUT',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(editedProfile)
+                                        })
+                                        const updated = await res.json()
+                                        if (!updated.error) {
+                                            setUserProfile(updated)
+                                            setIsEditingProfile(false)
+                                            setEditedProfile(null)
+                                        }
+                                    } catch (e) {
+                                        console.error("Failed to save profile", e)
+                                    }
+                                }}>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Save Changes
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-6 py-2">
+                            <div className="flex flex-col items-center justify-center space-y-2 pb-4 border-b">
+                                <Avatar className="h-20 w-20">
+                                    <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                                        {userProfile.name ? userProfile.name.substring(0, 2).toUpperCase() : "GU"}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="text-center">
+                                    <h3 className="text-xl font-bold">{userProfile.name}</h3>
+                                    <p className="text-muted-foreground text-sm">{userProfile.email}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Job Title</p>
+                                    <p className="font-medium">{userProfile.title || "Not Set"}</p>
+                                </div>
+                                <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Store ID</p>
+                                    <p className="font-medium">{userProfile.store_number || "Not Set"}</p>
+                                </div>
+                            </div>
+                            <div className="flex justify-end pt-2">
+                                <Button variant="outline" className="w-full" onClick={() => {
+                                    setEditedProfile({ ...userProfile })
+                                    setIsEditingProfile(true)
+                                }}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit Profile
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </>
