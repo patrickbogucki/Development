@@ -65,6 +65,55 @@ export function UnifiedFeedbackCenter() {
         }
     }
 
+    const [communitySort, setCommunitySort] = useState<"newest" | "high" | "low">("newest")
+    const [communityFilter, setCommunityFilter] = useState<"all" | "mine">("all")
+
+    type HistoryItem = {
+        id: number
+        title: string
+        type: string
+        status: string
+        date: string
+        statusColor: string
+        rating?: number
+        feedbackText?: string
+    }
+
+    const [history, setHistory] = useState<HistoryItem[]>([
+        { id: 1, title: "Add Dark Mode support", type: "Idea", status: "Under Review", date: "2 days ago", statusColor: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
+        { id: 2, title: "Login button not working on Safari", type: "Incident", status: "Resolved", date: "1 week ago", statusColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
+        { id: 3, title: "User Feedback", type: "Feedback", status: "New", date: "2 weeks ago", statusColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300", rating: 5, feedbackText: "Great UX on the new dashboard" }
+    ])
+
+    const [communityIdeas, setCommunityIdeas] = useState([
+        { id: 101, title: "Allow exporting reports to PDF", votes: 124, author: "Sarah M.", time: "2h ago", avatar: "SM", isMine: false },
+        { id: 102, title: "Integrate with Slack", votes: 89, author: "Mike T.", time: "5h ago", avatar: "MT", isMine: false },
+        { id: 103, title: "Keyboard shortcuts for navigation", votes: 45, author: "Alex R.", time: "1d ago", avatar: "AR", isMine: false },
+        { id: 104, title: "Customizable dashboard widgets", votes: 230, author: "Jessica L.", time: "3d ago", avatar: "JL", isMine: false },
+    ])
+
+    const [userVotes, setUserVotes] = useState<Set<number>>(new Set())
+
+    const handleVote = (id: number) => {
+        setCommunityIdeas(prev => prev.map(idea => {
+            if (idea.id === id) {
+                const isVoted = userVotes.has(id)
+                return { ...idea, votes: isVoted ? idea.votes - 1 : idea.votes + 1 }
+            }
+            return idea
+        }))
+
+        setUserVotes(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) {
+                next.delete(id)
+            } else {
+                next.add(id)
+            }
+            return next
+        })
+    }
+
     const handleSubmit = async () => {
         if (!isFormValid()) return
 
@@ -89,6 +138,34 @@ export function UnifiedFeedbackCenter() {
 
         console.log("Form Submitted:", JSON.stringify(payload, null, 2))
 
+        // Add to history
+        const newItem = {
+            id: Date.now(),
+            title: mode === "idea" ? `Idea: ${ideaForm.category}` :
+                mode === "feedback" ? "User Feedback" :
+                    brokenForm.description,
+            type: mode === "idea" ? "Idea" : mode === "feedback" ? "Feedback" : "Incident",
+            status: "New",
+            date: "Just now",
+            statusColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+            rating: mode === "feedback" ? feedbackForm.rating : undefined,
+            feedbackText: mode === "feedback" ? feedbackForm.text : undefined
+        }
+        setHistory(prev => [newItem, ...prev])
+
+        // Add to Community Ideas if it's an idea
+        if (mode === "idea") {
+            setCommunityIdeas(prev => [{
+                id: Date.now(),
+                title: ideaForm.description,
+                votes: 0,
+                author: "You",
+                time: "Just now",
+                avatar: "YO",
+                isMine: true
+            }, ...prev])
+        }
+
         setIsSubmitting(false)
         setIsSuccess(true)
 
@@ -103,6 +180,14 @@ export function UnifiedFeedbackCenter() {
         }, 2000)
     }
 
+    const sortedIdeas = [...communityIdeas]
+        .filter(idea => communityFilter === "all" || (communityFilter === "mine" && idea.isMine))
+        .sort((a, b) => {
+            if (communitySort === "high") return b.votes - a.votes
+            if (communitySort === "low") return a.votes - b.votes
+            return 0 // Default original order (mock newest)
+        })
+
     const emojis = [
         { level: 1, label: "Terrible", icon: "😠", displayName: "Terrible" },
         { level: 2, label: "Bad", icon: "🙁", displayName: "Bad" },
@@ -110,33 +195,6 @@ export function UnifiedFeedbackCenter() {
         { level: 4, label: "Good", icon: "🙂", displayName: "Good" },
         { level: 5, label: "Great", icon: "😍", displayName: "Great" },
     ]
-
-    const [communitySort, setCommunitySort] = useState<"newest" | "high" | "low">("newest")
-
-    const historyData = [
-        { id: 1, title: "Add Dark Mode support", type: "Idea", status: "Under Review", date: "2 days ago", statusColor: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
-        { id: 2, title: "Login button not working on Safari", type: "Incident", status: "Resolved", date: "1 week ago", statusColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
-        { id: 3, title: "Great UX on the new dashboard", type: "Feedback", status: "New", date: "2 weeks ago", statusColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300" }
-    ]
-
-    const [communityIdeas, setCommunityIdeas] = useState([
-        { id: 101, title: "Allow exporting reports to PDF", votes: 124, author: "Sarah M.", time: "2h ago", avatar: "SM" },
-        { id: 102, title: "Integrate with Slack", votes: 89, author: "Mike T.", time: "5h ago", avatar: "MT" },
-        { id: 103, title: "Keyboard shortcuts for navigation", votes: 45, author: "Alex R.", time: "1d ago", avatar: "AR" },
-        { id: 104, title: "Customizable dashboard widgets", votes: 230, author: "Jessica L.", time: "3d ago", avatar: "JL" },
-    ])
-
-    const handleVote = (id: number) => {
-        setCommunityIdeas(prev => prev.map(idea =>
-            idea.id === id ? { ...idea, votes: idea.votes + 1 } : idea
-        ))
-    }
-
-    const sortedIdeas = [...communityIdeas].sort((a, b) => {
-        if (communitySort === "high") return b.votes - a.votes
-        if (communitySort === "low") return a.votes - b.votes
-        return 0 // Default original order (mock newest)
-    })
 
     const selectionOptions = [
         {
@@ -396,18 +454,33 @@ export function UnifiedFeedbackCenter() {
                                 <ScrollArea className="h-full">
                                     <div className="p-6 space-y-4">
                                         <h3 className="text-lg font-semibold mb-4">Your Recent Submissions</h3>
-                                        {historyData.map((item) => (
+                                        {history.map((item) => (
                                             <Card key={item.id} className="overflow-hidden">
                                                 <CardContent className="p-4 flex items-center justify-between">
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.statusColor}`}>
-                                                                {item.status}
-                                                            </span>
-                                                            <span className="text-xs text-muted-foreground">{item.date}</span>
+                                                    <div className="space-y-1 w-full">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.statusColor}`}>
+                                                                    {item.status}
+                                                                </span>
+                                                                <span className="text-xs text-muted-foreground">{item.date}</span>
+                                                            </div>
+                                                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{item.type}</span>
                                                         </div>
-                                                        <p className="font-medium">{item.title}</p>
-                                                        <p className="text-xs text-muted-foreground">Type: {item.type}</p>
+
+                                                        {item.type === "Feedback" && item.rating ? (
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xl">{emojis[item.rating - 1]?.icon}</span>
+                                                                    <span className="font-medium text-sm">{emojis[item.rating - 1]?.label}</span>
+                                                                </div>
+                                                                <p className="text-sm text-foreground bg-zinc-50 dark:bg-zinc-900 p-3 rounded-md border italic">
+                                                                    "{item.feedbackText || item.title}"
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="font-medium">{item.title}</p>
+                                                        )}
                                                     </div>
                                                 </CardContent>
                                             </Card>
@@ -419,7 +492,24 @@ export function UnifiedFeedbackCenter() {
                             <TabsContent value="community" className="mt-0 h-full">
                                 <div className="flex flex-col h-full">
                                     <div className="px-6 py-4 border-b flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
-                                        <h3 className="text-sm font-semibold text-muted-foreground">Community Ideas</h3>
+                                        <div className="flex gap-1 bg-background p-1 rounded-md border">
+                                            <Button
+                                                variant={communityFilter === "all" ? "secondary" : "ghost"}
+                                                size="sm"
+                                                className="h-7 text-xs"
+                                                onClick={() => setCommunityFilter("all")}
+                                            >
+                                                All
+                                            </Button>
+                                            <Button
+                                                variant={communityFilter === "mine" ? "secondary" : "ghost"}
+                                                size="sm"
+                                                className="h-7 text-xs"
+                                                onClick={() => setCommunityFilter("mine")}
+                                            >
+                                                My Ideas
+                                            </Button>
+                                        </div>
                                         <div className="flex gap-1 bg-background p-1 rounded-md border">
                                             <Button
                                                 variant={communitySort === "newest" ? "secondary" : "ghost"}
@@ -450,32 +540,45 @@ export function UnifiedFeedbackCenter() {
 
                                     <ScrollArea className="flex-1 p-0">
                                         <div className="p-6 space-y-4">
-                                            {sortedIdeas.map((idea) => (
-                                                <div key={idea.id} className="flex items-start gap-4 p-4 rounded-xl border bg-card text-card-foreground shadow-sm">
-                                                    <div className="flex flex-col items-center gap-1 min-w-[50px]">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary hover:border-primary/50"
-                                                            onClick={() => handleVote(idea.id)}
-                                                        >
-                                                            <ThumbsUp className="h-4 w-4" />
-                                                        </Button>
-                                                        <span className="text-sm font-bold">{idea.votes}</span>
-                                                    </div>
-                                                    <div className="flex-1 space-y-2">
-                                                        <h4 className="font-semibold leading-none">{idea.title}</h4>
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                            <Avatar className="h-5 w-5">
-                                                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{idea.avatar}</AvatarFallback>
-                                                            </Avatar>
-                                                            <span>{idea.author}</span>
-                                                            <span>•</span>
-                                                            <span>{idea.time}</span>
-                                                        </div>
-                                                    </div>
+                                            {sortedIdeas.length === 0 ? (
+                                                <div className="text-center text-muted-foreground py-10">
+                                                    No ideas found.
                                                 </div>
-                                            ))}
+                                            ) : (
+                                                sortedIdeas.map((idea) => {
+                                                    const isVoted = userVotes.has(idea.id)
+                                                    return (
+                                                        <div key={idea.id} className={`flex items-start gap-4 p-4 rounded-xl border shadow-sm ${idea.isMine ? "bg-primary/5 border-primary/20" : "bg-card text-card-foreground"}`}>
+                                                            <div className="flex flex-col items-center gap-1 min-w-[50px]">
+                                                                <Button
+                                                                    variant={isVoted ? "default" : "outline"}
+                                                                    size="icon"
+                                                                    className={`h-8 w-8 rounded-full ${!isVoted && !idea.isMine && "hover:bg-primary/10 hover:text-primary hover:border-primary/50"}`}
+                                                                    onClick={() => handleVote(idea.id)}
+                                                                    disabled={idea.isMine}
+                                                                >
+                                                                    <ThumbsUp className={`h-4 w-4 ${isVoted ? "fill-current" : ""}`} />
+                                                                </Button>
+                                                                <span className={`text-sm font-bold ${isVoted ? "text-primary" : ""}`}>{idea.votes}</span>
+                                                            </div>
+                                                            <div className="flex-1 space-y-2">
+                                                                <div className="flex justify-between items-start">
+                                                                    <h4 className="font-semibold leading-snug">{idea.title}</h4>
+                                                                    {idea.isMine && <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">YOU</span>}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                                    <Avatar className="h-5 w-5">
+                                                                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{idea.avatar}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <span>{idea.author}</span>
+                                                                    <span>•</span>
+                                                                    <span>{idea.time}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })
+                                            )}
                                         </div>
                                     </ScrollArea>
                                 </div>
