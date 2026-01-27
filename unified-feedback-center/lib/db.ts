@@ -37,7 +37,10 @@ export interface Submission {
     is_mine?: boolean; // For local user tracking simulation
 }
 
-export function getSubmissions() {
+export function getSubmissions(since?: string) {
+    if (since) {
+        return db.prepare('SELECT * FROM submissions WHERE created_at > ? ORDER BY created_at DESC').all(since) as Submission[];
+    }
     return db.prepare('SELECT * FROM submissions ORDER BY created_at DESC').all() as Submission[];
 }
 

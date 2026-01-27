@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSubmissions, createSubmission } from '@/lib/db';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const submissions = getSubmissions();
+        const { searchParams } = new URL(request.url);
+        const since = searchParams.get('since');
+
+        const submissions = getSubmissions(since || undefined);
         // Convert integer booleans back to boolean for frontend
         const parsed = submissions.map(s => ({
             ...s,
