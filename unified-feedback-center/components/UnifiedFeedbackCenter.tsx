@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -73,28 +73,61 @@ export function UnifiedFeedbackCenter() {
         title: string
         type: string
         status: string
-        date: string
+        date: string // created_at mapped to relative time or filtered
         statusColor: string
         rating?: number
         feedbackText?: string
+        votes: number
+        author: string
+        avatar: string
+        isMine: boolean
+        time: string // Display time
     }
 
-    const [history, setHistory] = useState<HistoryItem[]>([
-        { id: 1, title: "Add Dark Mode support", type: "Idea", status: "Under Review", date: "2 days ago", statusColor: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
-        { id: 2, title: "Login button not working on Safari", type: "Incident", status: "Resolved", date: "1 week ago", statusColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
-        { id: 3, title: "User Feedback", type: "Feedback", status: "New", date: "2 weeks ago", statusColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300", rating: 5, feedbackText: "Great UX on the new dashboard" }
-    ])
+    const [history, setHistory] = useState<HistoryItem[]>([])
+    const [communityIdeas, setCommunityIdeas] = useState<HistoryItem[]>([])
 
-    const [communityIdeas, setCommunityIdeas] = useState([
-        { id: 101, title: "Allow exporting reports to PDF", votes: 124, author: "Sarah M.", time: "2h ago", avatar: "SM", isMine: false },
-        { id: 102, title: "Integrate with Slack", votes: 89, author: "Mike T.", time: "5h ago", avatar: "MT", isMine: false },
-        { id: 103, title: "Keyboard shortcuts for navigation", votes: 45, author: "Alex R.", time: "1d ago", avatar: "AR", isMine: false },
-        { id: 104, title: "Customizable dashboard widgets", votes: 230, author: "Jessica L.", time: "3d ago", avatar: "JL", isMine: false },
-    ])
+    // Fetch data on mount
+    const fetchData = async () => {
+        try {
+            const res = await fetch('/api/feedback')
+            const data = await res.json()
+
+            // Transform DB data to UI model
+            const uiData = data.map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                type: item.type,
+                status: "Received", // DB doesn't track status yet, default to Received
+                date: new Date(item.created_at).toLocaleDateString(),
+                statusColor: item.type === "Idea" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" :
+                    item.type === "Feedback" ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300" :
+                        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+                rating: item.rating,
+                feedbackText: item.feedback_text,
+                votes: item.votes || 0,
+                author: item.author || "Anonymous",
+                avatar: (item.author || "AN").substring(0, 2).toUpperCase(),
+                isMine: item.is_mine || false,
+                time: new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }))
+
+            setHistory(uiData.filter((i: any) => i.isMine))
+            setCommunityIdeas(uiData.filter((i: any) => i.type === "Idea"))
+
+        } catch (error) {
+            console.error("Failed to fetch data", error)
+        }
+    }
+
+    useEffect(() => {
+        fetchData()
+    }, [])
 
     const [userVotes, setUserVotes] = useState<Set<number>>(new Set())
 
-    const handleVote = (id: number) => {
+    const handleVote = async (id: number) => {
+        // Optimistic update
         setCommunityIdeas(prev => prev.map(idea => {
             if (idea.id === id) {
                 const isVoted = userVotes.has(id)
@@ -103,15 +136,30 @@ export function UnifiedFeedbackCenter() {
             return idea
         }))
 
+        // Toggle vote state locally
+        let increment = 1
         setUserVotes(prev => {
             const next = new Set(prev)
             if (next.has(id)) {
                 next.delete(id)
+                increment = -1
             } else {
                 next.add(id)
             }
             return next
         })
+
+        // API call
+        try {
+            await fetch('/api/feedback/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, increment })
+            })
+        } catch (error) {
+            console.error("Vote failed", error)
+            // Could revert optimistic update here
+        }
     }
 
     const handleSubmit = async () => {
@@ -119,65 +167,67 @@ export function UnifiedFeedbackCenter() {
 
         setIsSubmitting(true)
 
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-
+        // Construct payload
         const baseData = {
-            timestamp: new Date().toISOString(),
-            attachment: attachment ? attachment.name : null
+            author: "You", // Hardcoded user
+            is_urgent: mode === "broken" ? brokenForm.isUrgent : false
         }
 
-        let payload = {}
+        let payload: any = {}
         if (mode === "idea") {
-            payload = { target_table: "idea", ...ideaForm, ...baseData }
+            payload = {
+                type: "Idea",
+                category: ideaForm.category,
+                description: ideaForm.description,
+                title: ideaForm.description.substring(0, 50) + (ideaForm.description.length > 50 ? "..." : ""), // Use desc as title
+                ...baseData
+            }
         } else if (mode === "feedback") {
-            payload = { target_table: "feedback", ...feedbackForm, ...baseData }
+            payload = {
+                type: "Feedback",
+                rating: feedbackForm.rating,
+                feedback_text: feedbackForm.text,
+                title: "User Feedback",
+                ...baseData
+            }
         } else if (mode === "broken") {
-            payload = { target_table: "incident", ...brokenForm, ...baseData }
+            payload = {
+                type: "Incident",
+                description: brokenForm.description,
+                title: brokenForm.description,
+                ...baseData
+            }
         }
 
-        console.log("Form Submitted:", JSON.stringify(payload, null, 2))
+        console.log("Submitting:", payload);
 
-        // Add to history
-        const newItem = {
-            id: Date.now(),
-            title: mode === "idea" ? `Idea: ${ideaForm.category}` :
-                mode === "feedback" ? "User Feedback" :
-                    brokenForm.description,
-            type: mode === "idea" ? "Idea" : mode === "feedback" ? "Feedback" : "Incident",
-            status: "New",
-            date: "Just now",
-            statusColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-            rating: mode === "feedback" ? feedbackForm.rating : undefined,
-            feedbackText: mode === "feedback" ? feedbackForm.text : undefined
+        try {
+            await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+
+            // Refresh data
+            await fetchData()
+
+            setIsSubmitting(false)
+            setIsSuccess(true)
+
+            // Reset after success
+            setTimeout(() => {
+                setIsSuccess(false)
+                setMode("select")
+                setAttachment(null)
+                setIdeaForm({ description: "", category: "" })
+                setFeedbackForm({ rating: 3, text: "" })
+                setBrokenForm({ description: "", isUrgent: false })
+            }, 2000)
+
+        } catch (error) {
+            console.error("Submission failed", error)
+            setIsSubmitting(false)
         }
-        setHistory(prev => [newItem, ...prev])
-
-        // Add to Community Ideas if it's an idea
-        if (mode === "idea") {
-            setCommunityIdeas(prev => [{
-                id: Date.now(),
-                title: ideaForm.description,
-                votes: 0,
-                author: "You",
-                time: "Just now",
-                avatar: "YO",
-                isMine: true
-            }, ...prev])
-        }
-
-        setIsSubmitting(false)
-        setIsSuccess(true)
-
-        // Reset after success
-        setTimeout(() => {
-            setIsSuccess(false)
-            setMode("select")
-            setAttachment(null)
-            setIdeaForm({ description: "", category: "" })
-            setFeedbackForm({ rating: 3, text: "" })
-            setBrokenForm({ description: "", isUrgent: false })
-        }, 2000)
     }
 
     const sortedIdeas = [...communityIdeas]
