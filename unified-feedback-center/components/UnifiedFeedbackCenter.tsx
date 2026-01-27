@@ -338,16 +338,16 @@ export function UnifiedFeedbackCenter() {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -10 }}
                                             transition={{ duration: 0.2 }}
-                                            className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full content-center pb-20"
+                                            className="flex flex-col gap-4 h-full justify-center max-w-md mx-auto pb-20"
                                         >
                                             {selectionOptions.map((option) => (
                                                 <div key={option.id} onClick={() => setMode(option.id as FeedbackType)}>
-                                                    <Card className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 h-full border-zinc-200 dark:border-zinc-800">
-                                                        <CardContent className="flex flex-col items-center text-center p-6 gap-4 pt-10">
-                                                            <div className={`p-4 rounded-full ${option.bg} ${option.color}`}>
-                                                                <option.icon className="h-8 w-8" />
+                                                    <Card className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-zinc-200 dark:border-zinc-800">
+                                                        <CardContent className="flex items-center text-left p-4 gap-4">
+                                                            <div className={`p-3 rounded-full shrink-0 ${option.bg} ${option.color}`}>
+                                                                <option.icon className="h-6 w-6" />
                                                             </div>
-                                                            <div className="space-y-2">
+                                                            <div className="space-y-1">
                                                                 <h3 className="font-semibold text-lg">{option.title}</h3>
                                                                 <p className="text-sm text-muted-foreground leading-snug">
                                                                     {option.description}
