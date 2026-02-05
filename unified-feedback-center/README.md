@@ -1,3 +1,9 @@
+# Unified Feedback Center
+
+A modern, unified feedback management system built with Next.js for collecting, organizing, and managing user feedback.
+
+## About
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
