@@ -301,36 +301,41 @@ export function UnifiedFeedbackCenter() {
 
     return (
         <>
-            <div className="fixed bottom-6 right-6 z-50">
-                <Button
-                    onClick={() => setOpen(true)}
-                    className="rounded-full shadow-lg gap-2 h-14 pl-4 pr-6"
-                >
-                    <MessageSquarePlus className="h-5 w-5" />
-                    <span className="text-lg font-medium">Feedback</span>
-                </Button>
-            </div>
+            {/* Feedback Trigger - hidden when open */}
+            {!open && (
+                <div className="fixed bottom-6 right-6 z-50">
+                    <Button
+                        onClick={() => setOpen(true)}
+                        className="rounded-full shadow-lg gap-2 h-14 pl-4 pr-6"
+                    >
+                        <MessageSquarePlus className="h-5 w-5" />
+                        <span className="text-lg font-medium">Feedback</span>
+                    </Button>
+                </div>
+            )}
 
-            {/* Profile Icon Header */}
-            <div className="fixed top-6 right-6 z-50">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-12 w-12 rounded-full overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-sm hover:shadow-md bg-white dark:bg-zinc-900"
-                    onClick={() => setIsProfileOpen(true)}
-                >
-                    <Avatar className="h-full w-full">
-                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                            {userProfile.name ? userProfile.name.substring(0, 2).toUpperCase() : "GU"}
-                        </AvatarFallback>
-                    </Avatar>
-                </Button>
-            </div>
+            {/* Profile Icon Header - hidden when open */}
+            {!open && (
+                <div className="fixed top-6 right-6 z-50">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-12 w-12 rounded-full overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-sm hover:shadow-md bg-white dark:bg-zinc-900"
+                        onClick={() => setIsProfileOpen(true)}
+                    >
+                        <Avatar className="h-full w-full">
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                {userProfile.name ? userProfile.name.substring(0, 2).toUpperCase() : "GU"}
+                            </AvatarFallback>
+                        </Avatar>
+                    </Button>
+                </div>
+            )}
 
             <Dialog open={open} onOpenChange={handleOpenChange}>
-                <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
+                <DialogContent className="w-[95vw] sm:max-w-[700px] h-[85vh] sm:h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
                     {/* Header Area */}
-                    <div className="p-6 pb-2">
+                    <div className="p-4 sm:p-6 pb-2">
                         <DialogHeader>
                             <div className="flex items-center gap-2">
                                 {mode !== "select" && (
@@ -338,13 +343,13 @@ export function UnifiedFeedbackCenter() {
                                         <ArrowLeft className="h-4 w-4" />
                                     </Button>
                                 )}
-                                <DialogTitle className="text-2xl font-semibold">
+                                <DialogTitle className="text-xl sm:text-2xl font-semibold">
                                     {mode === "select" ? "Feedback Center" :
                                         mode === "idea" ? "Submit an Idea" :
                                             mode === "feedback" ? "Share Feedback" : "Report Issue"}
                                 </DialogTitle>
                             </div>
-                            <DialogDescription>
+                            <DialogDescription className="text-sm">
                                 {mode === "select" ? "Help us improve by sharing your ideas, feedback, or reporting issues." :
                                     mode === "idea" ? "We'd love to hear your innovative ideas." :
                                         mode === "feedback" ? "Your thoughts help us create better experiences." : "Let us know what's not working correctly."}
@@ -359,18 +364,18 @@ export function UnifiedFeedbackCenter() {
                                 <motion.div
                                     initial={{ height: "auto", opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
-                                    className="px-6 border-b overflow-hidden"
+                                    className="px-4 sm:px-6 border-b overflow-hidden"
                                 >
-                                    <TabsList className="grid w-full grid-cols-3 mb-4">
-                                        <TabsTrigger value="submit">Submit Feedback</TabsTrigger>
-                                        <TabsTrigger value="history">My History</TabsTrigger>
-                                        <TabsTrigger value="community">Community Ideas</TabsTrigger>
+                                    <TabsList className="grid w-full grid-cols-3 mb-4 h-auto py-1">
+                                        <TabsTrigger value="submit" className="px-1 text-xs sm:text-sm whitespace-normal text-center h-full">Submit <span className="hidden sm:inline ml-1">Feedback</span></TabsTrigger>
+                                        <TabsTrigger value="history" className="px-1 text-xs sm:text-sm whitespace-normal text-center h-full">My History</TabsTrigger>
+                                        <TabsTrigger value="community" className="px-1 text-xs sm:text-sm whitespace-normal text-center h-full">Community <span className="hidden sm:inline ml-1">Ideas</span></TabsTrigger>
                                     </TabsList>
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
-                        <div className="flex-1 overflow-y-auto p-6 bg-zinc-50 dark:bg-zinc-900/50">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-zinc-50 dark:bg-zinc-900/50">
                             <TabsContent value="submit" className="mt-0 h-full relative">
                                 <AnimatePresence mode="wait">
                                     {mode === "select" ? (
@@ -380,18 +385,18 @@ export function UnifiedFeedbackCenter() {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -10 }}
                                             transition={{ duration: 0.2 }}
-                                            className="flex flex-col gap-4 h-full justify-center max-w-md mx-auto pb-20"
+                                            className="flex flex-col gap-3 sm:gap-4 h-full pt-4 sm:justify-center max-w-md mx-auto pb-20"
                                         >
                                             {selectionOptions.map((option) => (
                                                 <div key={option.id} onClick={() => setMode(option.id as FeedbackType)}>
                                                     <Card className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-zinc-200 dark:border-zinc-800">
-                                                        <CardContent className="flex items-center text-left p-4 gap-4">
-                                                            <div className={`p-3 rounded-full shrink-0 ${option.bg} ${option.color}`}>
-                                                                <option.icon className="h-6 w-6" />
+                                                        <CardContent className="flex items-center text-left p-4 gap-3 sm:gap-4">
+                                                            <div className={`p-2 sm:p-3 rounded-full shrink-0 ${option.bg} ${option.color}`}>
+                                                                <option.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                                                             </div>
                                                             <div className="space-y-1">
-                                                                <h3 className="font-semibold text-lg">{option.title}</h3>
-                                                                <p className="text-sm text-muted-foreground leading-snug">
+                                                                <h3 className="font-semibold text-base sm:text-lg">{option.title}</h3>
+                                                                <p className="text-xs sm:text-sm text-muted-foreground leading-snug">
                                                                     {option.description}
                                                                 </p>
                                                             </div>
@@ -420,7 +425,7 @@ export function UnifiedFeedbackCenter() {
                                                     </p>
                                                 </div>
                                             ) : (
-                                                <div className="space-y-6 py-4 px-1">
+                                                <div className="space-y-6 py-2 px-1">
                                                     {/* Idea Form */}
                                                     {mode === "idea" && (
                                                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -430,7 +435,7 @@ export function UnifiedFeedbackCenter() {
                                                                     value={ideaForm.category}
                                                                     onValueChange={(val) => setIdeaForm({ ...ideaForm, category: val })}
                                                                 >
-                                                                    <SelectTrigger>
+                                                                    <SelectTrigger className="w-full">
                                                                         <SelectValue placeholder="Select a category" />
                                                                     </SelectTrigger>
                                                                     <SelectContent>
@@ -458,15 +463,15 @@ export function UnifiedFeedbackCenter() {
                                                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                                                             <div className="space-y-4">
                                                                 <Label>How was your experience?</Label>
-                                                                <div className="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                                                                <div className="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 p-2 sm:p-4 rounded-lg overflow-x-auto">
                                                                     {emojis.map((emoji) => (
                                                                         <button
                                                                             key={emoji.level}
                                                                             onClick={() => setFeedbackForm({ ...feedbackForm, rating: emoji.level })}
-                                                                            className={`flex flex-col items-center gap-1 transition-all hover:scale-110 ${feedbackForm.rating === emoji.level ? "text-primary scale-110 font-bold" : "text-muted-foreground opacity-70"}`}
+                                                                            className={`flex flex-col items-center gap-1 transition-all p-1 sm:p-0 hover:scale-110 ${feedbackForm.rating === emoji.level ? "text-primary scale-110 font-bold" : "text-muted-foreground opacity-70"}`}
                                                                         >
-                                                                            <span className="text-3xl">{emoji.icon}</span>
-                                                                            <span className="text-xs">{emoji.displayName}</span>
+                                                                            <span className="text-2xl sm:text-3xl">{emoji.icon}</span>
+                                                                            <span className="text-[10px] sm:text-xs whitespace-nowrap">{emoji.displayName}</span>
                                                                         </button>
                                                                     ))}
                                                                 </div>
@@ -544,20 +549,20 @@ export function UnifiedFeedbackCenter() {
 
                             <TabsContent value="history" className="mt-0 h-full">
                                 <ScrollArea className="h-full">
-                                    <div className="p-6 space-y-4">
-                                        <h3 className="text-lg font-semibold mb-4">Your Recent Submissions</h3>
+                                    <div className="p-1 sm:p-6 space-y-4">
+                                        <h3 className="text-lg font-semibold mb-4 px-1">Your Recent Submissions</h3>
                                         {history.map((item) => (
                                             <Card key={item.id} className="overflow-hidden">
                                                 <CardContent className="p-4 flex items-center justify-between">
                                                     <div className="space-y-1 w-full">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <div className="flex items-center gap-2">
+                                                        <div className="flex items-center justify-between mb-2 gap-2">
+                                                            <div className="flex flex-wrap items-center gap-2">
                                                                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.statusColor}`}>
                                                                     {item.status}
                                                                 </span>
-                                                                <span className="text-xs text-muted-foreground">{item.date}</span>
+                                                                <span className="text-xs text-muted-foreground whitespace-nowrap">{item.date}</span>
                                                             </div>
-                                                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{item.type}</span>
+                                                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider shrink-0">{item.type}</span>
                                                         </div>
 
                                                         {item.type === "Feedback" && item.rating ? (
@@ -583,12 +588,12 @@ export function UnifiedFeedbackCenter() {
 
                             <TabsContent value="community" className="mt-0 h-full">
                                 <div className="flex flex-col h-full">
-                                    <div className="px-6 py-4 border-b flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
-                                        <div className="flex gap-1 bg-background p-1 rounded-md border">
+                                    <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
+                                        <div className="flex gap-1 bg-background p-1 rounded-md border w-full sm:w-auto overflow-x-auto">
                                             <Button
                                                 variant={communityFilter === "all" ? "secondary" : "ghost"}
                                                 size="sm"
-                                                className="h-7 text-xs"
+                                                className="h-7 text-xs flex-1 sm:flex-none"
                                                 onClick={() => setCommunityFilter("all")}
                                             >
                                                 All
@@ -596,17 +601,17 @@ export function UnifiedFeedbackCenter() {
                                             <Button
                                                 variant={communityFilter === "mine" ? "secondary" : "ghost"}
                                                 size="sm"
-                                                className="h-7 text-xs"
+                                                className="h-7 text-xs flex-1 sm:flex-none whitespace-nowrap"
                                                 onClick={() => setCommunityFilter("mine")}
                                             >
                                                 My Ideas
                                             </Button>
                                         </div>
-                                        <div className="flex gap-1 bg-background p-1 rounded-md border">
+                                        <div className="flex gap-1 bg-background p-1 rounded-md border w-full sm:w-auto overflow-x-auto">
                                             <Button
                                                 variant={communitySort === "newest" ? "secondary" : "ghost"}
                                                 size="sm"
-                                                className="h-7 text-xs"
+                                                className="h-7 text-xs flex-1 sm:flex-none"
                                                 onClick={() => setCommunitySort("newest")}
                                             >
                                                 Newest
@@ -614,7 +619,7 @@ export function UnifiedFeedbackCenter() {
                                             <Button
                                                 variant={communitySort === "high" ? "secondary" : "ghost"}
                                                 size="sm"
-                                                className="h-7 text-xs"
+                                                className="h-7 text-xs flex-1 sm:flex-none whitespace-nowrap"
                                                 onClick={() => setCommunitySort("high")}
                                             >
                                                 High Votes
@@ -622,7 +627,7 @@ export function UnifiedFeedbackCenter() {
                                             <Button
                                                 variant={communitySort === "low" ? "secondary" : "ghost"}
                                                 size="sm"
-                                                className="h-7 text-xs"
+                                                className="h-7 text-xs flex-1 sm:flex-none whitespace-nowrap"
                                                 onClick={() => setCommunitySort("low")}
                                             >
                                                 Low Votes
@@ -631,7 +636,7 @@ export function UnifiedFeedbackCenter() {
                                     </div>
 
                                     <ScrollArea className="flex-1 p-0">
-                                        <div className="p-6 space-y-4">
+                                        <div className="p-4 sm:p-6 space-y-4">
                                             {sortedIdeas.length === 0 ? (
                                                 <div className="text-center text-muted-foreground py-10">
                                                     No ideas found.
@@ -653,12 +658,12 @@ export function UnifiedFeedbackCenter() {
                                                                 </Button>
                                                                 <span className={`text-sm font-bold ${isVoted ? "text-primary" : ""}`}>{idea.votes}</span>
                                                             </div>
-                                                            <div className="flex-1 space-y-2">
-                                                                <div className="flex justify-between items-start">
-                                                                    <h4 className="font-semibold leading-snug">{idea.title}</h4>
-                                                                    {idea.isMine && <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">YOU</span>}
+                                                            <div className="flex-1 space-y-2 min-w-0">
+                                                                <div className="flex justify-between items-start gap-2">
+                                                                    <h4 className="font-semibold leading-snug break-words">{idea.title}</h4>
+                                                                    {idea.isMine && <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full shrink-0">YOU</span>}
                                                                 </div>
-                                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                                                     <Avatar className="h-5 w-5">
                                                                         <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{idea.avatar}</AvatarFallback>
                                                                     </Avatar>
